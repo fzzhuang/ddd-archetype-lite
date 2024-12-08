@@ -21,7 +21,6 @@ public class ComputeCostAspect {
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         // 获取方法名
-        String methodName = signature.getName();
         long startTime = System.currentTimeMillis();
         Object result = joinPoint.proceed();
         // 执行耗时
