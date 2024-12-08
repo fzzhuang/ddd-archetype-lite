@@ -1,0 +1,24 @@
+# mysql
+mysql:
+  host: localhost
+  port: 13306
+  database: assist
+  username: root
+  password: root
+  hikari:
+    pool-name: ddd-pool
+
+# redis
+redis:
+  host: 127.0.0.1
+  port: 16379
+  password: root
+
+# rocketmq
+mq:
+  host: 8.130.137.228
+  port: 9876
+  producer:
+    group: assist-producer
+  consumer:
+    group: assist-consumer
