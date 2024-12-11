@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>cn.fuzhizhuang</groupId>
+    <groupId>cn.fzzhuang</groupId>
     <artifactId>ddd-archetype-lite</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
@@ -24,7 +24,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- 项目相关 -->
-        <spring-boot.version>3.4.0</spring-boot.version>
+        <spring-boot.version>3.3.0</spring-boot.version>
         <mysql.version>8.4.0</mysql.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <fastjson.version>2.0.53</fastjson.version>
@@ -67,7 +67,7 @@
             </dependency>
             <!-- redisson plus -->
             <dependency>
-                <groupId>cn.fuzhizhuang</groupId>
+                <groupId>cn.fzzhuang</groupId>
                 <artifactId>redisson-plus-spring-boot-starter</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
@@ -110,37 +110,37 @@
             <!-- 工程模块 -->
             <!-- types -->
             <dependency>
-                <groupId>cn.fuzhizhuang</groupId>
+                <groupId>cn.fzzhuang</groupId>
                 <artifactId>ddd-archetype-lite-types</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- domain -->
             <dependency>
-                <groupId>cn.fuzhizhuang</groupId>
+                <groupId>cn.fzzhuang</groupId>
                 <artifactId>ddd-archetype-lite-domain</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- infrastructure -->
             <dependency>
-                <groupId>cn.fuzhizhuang</groupId>
+                <groupId>cn.fzzhuang</groupId>
                 <artifactId>ddd-archetype-lite-infrastructure</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- case -->
             <dependency>
-                <groupId>cn.fuzhizhuang</groupId>
+                <groupId>cn.fzzhuang</groupId>
                 <artifactId>ddd-archetype-lite-case</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- trigger -->
             <dependency>
-                <groupId>cn.fuzhizhuang</groupId>
+                <groupId>cn.fzzhuang</groupId>
                 <artifactId>ddd-archetype-lite-trigger</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- client -->
             <dependency>
-                <groupId>cn.fuzhizhuang</groupId>
+                <groupId>cn.fzzhuang</groupId>
                 <artifactId>ddd-archetype-lite-client</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -162,7 +162,7 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <encoding>UTF-8</encoding>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                     <compilerArgs>
                         <arg>-parameters</arg>
                     </compilerArgs>
@@ -174,7 +174,7 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.3.1</version>
                 <configuration>
-                    <encoding>UTF-8</encoding>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
             <!-- 统一设定POM版本信息插件 -->
