@@ -94,35 +94,36 @@ public class CursorUtil {
     /**
      * 复合游标翻页，小于cursor，倒序查询
      *
-     * @param mapper        mapper
-     * @param req           请求参数
-     * @param initWrapper   提供的扩展点，业务方可以在sql中拼接一些查询条件
-     * @param cursorColumns 游标字段数组，用于游标查询，以及后续的游标计算
-     * @param clazz         游标字段类型
-     * @param ltFlag        小于cursor
-     * @param descFlag      降序
-     * @param <T>           实体类
+     * @param mapper       mapper
+     * @param req          请求参数
+     * @param initWrapper  提供的扩展点，业务方可以在sql中拼接一些查询条件
+     * @param cursorColumn 游标字段，用于游标查询，以及后续的游标计算
+     * @param clazz        游标字段类型
+     * @param uniqueColumn 唯一字段，用于防止重复数据
+     * @param ltFlag       小于cursor
+     * @param descFlag     降序
+     * @param <T>          实体类
      * @return 分页结果
      */
-    public static <T> CursorPageResp<T> getCompositeCursorPage(IService<T> mapper, BaseCursorPage req, Consumer<LambdaQueryWrapper<T>> initWrapper, SFunction<T, ?>[] cursorColumns, Class<?> clazz, boolean ltFlag, boolean descFlag) {
+    public static <T> CursorPageResp<T> getCompositeCursorPage(IService<T> mapper, BaseCursorPage req, Consumer<LambdaQueryWrapper<T>> initWrapper, SFunction<T, ?> cursorColumn, Class<?> clazz, SFunction<T, ?> uniqueColumn, boolean ltFlag, boolean descFlag) {
         LambdaQueryWrapper<T> wrapper = new LambdaQueryWrapper<>();
         // 游标字段
         if (StringUtils.isNoneBlank(req.getCursor())) {
             String[] cursors = req.getCursor().split(",");
-            for (int i = 0; i < cursorColumns.length; i++) {
-                if (ltFlag) wrapper.lt(cursorColumns[i], parseCursor(cursors[i], clazz));
-                else wrapper.gt(cursorColumns[i], parseCursor(cursors[i], clazz));
+            // cursors[0] 游标字段 cursors[1] 唯一字段
+            if (ltFlag) {
+                wrapper.lt(cursorColumn, parseCursor(cursors[0], clazz));
+                wrapper.lt(uniqueColumn, parseCursor(cursors[1], clazz));
+            } else {
+                wrapper.gt(cursorColumn, parseCursor(cursors[0], clazz));
+                wrapper.gt(uniqueColumn, parseCursor(cursors[1], clazz));
             }
         }
         // 游标翻页方向
         if (!descFlag) {
-            for (SFunction<T, ?> column : cursorColumns) {
-                wrapper.orderByAsc(column);
-            }
+            wrapper.orderByAsc(cursorColumn, uniqueColumn);
         } else {
-            for (SFunction<T, ?> column : cursorColumns) {
-                wrapper.orderByDesc(column);
-            }
+            wrapper.orderByDesc(cursorColumn, uniqueColumn);
         }
 
         if (initWrapper != null) {
@@ -132,13 +133,8 @@ public class CursorUtil {
         Page<T> page = mapper.page(req.plusPage(), wrapper);
         // 计算游标位置
         String cursor = Optional.ofNullable(CollectionUtil.getLast(page.getRecords()))
-                .map(record -> {
-                    StringBuilder sb = new StringBuilder();
-                    for (SFunction<T, ?> column : cursorColumns) {
-                        sb.append(toCursor(column.apply(record))).append(",");
-                    }
-                    return sb.substring(0, sb.length() - 1);
-                }).orElse(null);
+                .map(record -> toCursor(cursorColumn.apply(record)) +
+                        "," + toCursor(uniqueColumn.apply(record))).orElse(null);
         // 是否是最后一页
         Boolean isLast = page.getRecords().size() != req.getSize();
         return new CursorPageResp<>(cursor, isLast, page.getRecords());
@@ -147,29 +143,29 @@ public class CursorUtil {
     /**
      * 复合游标翻页，小于cursor，倒序查询
      *
-     * @param mapper        mapper
-     * @param req           请求参数
-     * @param initWrapper   提供的扩展点，业务方可以在sql中拼接一些查询条件
-     * @param cursorColumns 游标字段数组，用于游标查询，以及后续的游标计算
-     * @param clazz         游标字段类型
-     * @return 分页结果
+     * @param mapper       mapper
+     * @param req          请求参数
+     * @param initWrapper  提供的扩展点，业务方可以在sql中拼接一些查询条件
+     * @param cursorColumn 游标字段，用于游标查询，以及后续的游标计算
+     * @param clazz        游标字段类型
+     * @param uniqueColumn 唯一字段，用于防止重复数据
      */
-    public static <T> CursorPageResp<T> getCompositeCursorPageLtDesc(IService<T> mapper, BaseCursorPage req, Consumer<LambdaQueryWrapper<T>> initWrapper, SFunction<T, ?>[] cursorColumns, Class<?> clazz) {
-        return getCompositeCursorPage(mapper, req, initWrapper, cursorColumns, clazz, true, true);
+    public static <T> CursorPageResp<T> getCompositeCursorPageLtDesc(IService<T> mapper, BaseCursorPage req, Consumer<LambdaQueryWrapper<T>> initWrapper, SFunction<T, ?> cursorColumn, Class<?> clazz, SFunction<T, ?> uniqueColumn) {
+        return getCompositeCursorPage(mapper, req, initWrapper, cursorColumn, clazz, uniqueColumn, true, true);
     }
 
     /**
      * 复合游标翻页，大于cursor，正序查询
      *
-     * @param mapper        mapper
-     * @param req           请求参数
-     * @param initWrapper   提供的扩展点，业务方可以在sql中拼接一些查询条件
-     * @param cursorColumns 游标字段数组，用于游标查询，以及后续的游标计算
-     * @param clazz         游标字段类型
-     * @return 分页结果
+     * @param mapper       mapper
+     * @param req          请求参数
+     * @param initWrapper  提供的扩展点，业务方可以在sql中拼接一些查询条件
+     * @param cursorColumn 游标字段，用于游标查询，以及后续的游标计算
+     * @param clazz        游标字段类型
+     * @param uniqueColumn 唯一字段，用于防止重复数据
      */
-    public static <T> CursorPageResp<T> getCompositeCursorPageGtAsc(IService<T> mapper, BaseCursorPage req, Consumer<LambdaQueryWrapper<T>> initWrapper, SFunction<T, ?>[] cursorColumns, Class<?> clazz) {
-        return getCompositeCursorPage(mapper, req, initWrapper, cursorColumns, clazz, false, false);
+    public static <T> CursorPageResp<T> getCompositeCursorPageGtAsc(IService<T> mapper, BaseCursorPage req, Consumer<LambdaQueryWrapper<T>> initWrapper, SFunction<T, ?> cursorColumn, Class<?> clazz, SFunction<T, ?> uniqueColumn) {
+        return getCompositeCursorPage(mapper, req, initWrapper, cursorColumn, clazz, uniqueColumn, false, false);
     }
 
     /**
