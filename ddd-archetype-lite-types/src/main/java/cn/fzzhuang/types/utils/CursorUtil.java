@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Date;
@@ -18,6 +19,7 @@ import java.util.function.Consumer;
  *
  * @author Fu.zhizhuang
  */
+@Slf4j
 public class CursorUtil {
 
     /**
@@ -88,6 +90,87 @@ public class CursorUtil {
         return getCursorPage(mapper, req, initWrapper, cursorColumn, clazz, false, false);
     }
 
+
+    /**
+     * 复合游标翻页，小于cursor，倒序查询
+     *
+     * @param mapper        mapper
+     * @param req           请求参数
+     * @param initWrapper   提供的扩展点，业务方可以在sql中拼接一些查询条件
+     * @param cursorColumns 游标字段数组，用于游标查询，以及后续的游标计算
+     * @param clazz         游标字段类型
+     * @param ltFlag        小于cursor
+     * @param descFlag      降序
+     * @param <T>           实体类
+     * @return 分页结果
+     */
+    public static <T> CursorPageResp<T> getCompositeCursorPage(IService<T> mapper, BaseCursorPage req, Consumer<LambdaQueryWrapper<T>> initWrapper, SFunction<T, ?>[] cursorColumns, Class<?> clazz, boolean ltFlag, boolean descFlag) {
+        LambdaQueryWrapper<T> wrapper = new LambdaQueryWrapper<>();
+        // 游标字段
+        if (StringUtils.isNoneBlank(req.getCursor())) {
+            String[] cursors = req.getCursor().split(",");
+            for (int i = 0; i < cursorColumns.length; i++) {
+                if (ltFlag) wrapper.lt(cursorColumns[i], parseCursor(cursors[i], clazz));
+                else wrapper.gt(cursorColumns[i], parseCursor(cursors[i], clazz));
+            }
+        }
+        // 游标翻页方向
+        if (!descFlag) {
+            for (SFunction<T, ?> column : cursorColumns) {
+                wrapper.orderByAsc(column);
+            }
+        } else {
+            for (SFunction<T, ?> column : cursorColumns) {
+                wrapper.orderByDesc(column);
+            }
+        }
+
+        if (initWrapper != null) {
+            // 额外查询条件
+            initWrapper.accept(wrapper);
+        }
+        Page<T> page = mapper.page(req.plusPage(), wrapper);
+        // 计算游标位置
+        String cursor = Optional.ofNullable(CollectionUtil.getLast(page.getRecords()))
+                .map(record -> {
+                    StringBuilder sb = new StringBuilder();
+                    for (SFunction<T, ?> column : cursorColumns) {
+                        sb.append(toCursor(column.apply(record))).append(",");
+                    }
+                    return sb.substring(0, sb.length() - 1);
+                }).orElse(null);
+        // 是否是最后一页
+        Boolean isLast = page.getRecords().size() != req.getSize();
+        return new CursorPageResp<>(cursor, isLast, page.getRecords());
+    }
+
+    /**
+     * 复合游标翻页，小于cursor，倒序查询
+     *
+     * @param mapper        mapper
+     * @param req           请求参数
+     * @param initWrapper   提供的扩展点，业务方可以在sql中拼接一些查询条件
+     * @param cursorColumns 游标字段数组，用于游标查询，以及后续的游标计算
+     * @param clazz         游标字段类型
+     * @return 分页结果
+     */
+    public static <T> CursorPageResp<T> getCompositeCursorPageLtDesc(IService<T> mapper, BaseCursorPage req, Consumer<LambdaQueryWrapper<T>> initWrapper, SFunction<T, ?>[] cursorColumns, Class<?> clazz) {
+        return getCompositeCursorPage(mapper, req, initWrapper, cursorColumns, clazz, true, true);
+    }
+
+    /**
+     * 复合游标翻页，大于cursor，正序查询
+     *
+     * @param mapper        mapper
+     * @param req           请求参数
+     * @param initWrapper   提供的扩展点，业务方可以在sql中拼接一些查询条件
+     * @param cursorColumns 游标字段数组，用于游标查询，以及后续的游标计算
+     * @param clazz         游标字段类型
+     * @return 分页结果
+     */
+    public static <T> CursorPageResp<T> getCompositeCursorPageGtAsc(IService<T> mapper, BaseCursorPage req, Consumer<LambdaQueryWrapper<T>> initWrapper, SFunction<T, ?>[] cursorColumns, Class<?> clazz) {
+        return getCompositeCursorPage(mapper, req, initWrapper, cursorColumns, clazz, false, false);
+    }
 
     /**
      * 解析游标
