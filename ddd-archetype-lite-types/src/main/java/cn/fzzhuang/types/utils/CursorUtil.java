@@ -97,7 +97,7 @@ public class CursorUtil {
      * @return 解析后的游标
      */
     private static Object parseCursor(String cursor, Class<?> clazz) {
-        if (clazz.isInstance(Date.class)) {
+        if (Date.class.isAssignableFrom(clazz)) {
             return new Date(Long.parseLong(cursor));
         } else {
             return cursor;
